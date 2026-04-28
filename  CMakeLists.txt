@@ -1,0 +1,55 @@
+cmake_minimum_required(VERSION 3.22)
+
+project(NeuralAmp VERSION 0.1.0)
+
+# C++20, niente estensioni compilatore-specifiche
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Aggiungi JUCE come subdirectory
+add_subdirectory(/Users/armando/GIT/JUCE ${CMAKE_BINARY_DIR}/JUCE)
+
+# Definisci il plugin
+juce_add_plugin(NeuralAmp
+    COMPANY_NAME "ArmandoWilliamDev"
+    BUNDLE_ID com.armandowilliamdev.neuralamp
+    PLUGIN_MANUFACTURER_CODE Armt
+    PLUGIN_CODE Namp
+    FORMATS AU VST3 Standalone
+    PRODUCT_NAME "NeuralAmp"
+    IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT FALSE
+    NEEDS_MIDI_OUTPUT FALSE
+    # Copia automaticamenteo AU/VST nelle cartelle di sistema dopo ogni build
+    COPY_PLUGIN_AFTER_BUILD TRUE
+)
+
+# Genera l'header JuceHeader.h
+juce_generate_juce_header(NeuralAmp)
+
+# I sorgenti del plugin
+target_sources(NeuralAmp PRIVATE
+    Source/PluginProcessor.cpp
+    Source/PluginProcessor.h
+    Source/PluginEditor.cpp
+    Source/PluginEditor.h
+)
+
+# Definizioni di compilazione standard JUCE
+target_compile_definitions(NeuralAmp PUBLIC
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+)
+
+# Link dei moduli JUCE necessari
+target_link_libraries(NeuralAmp PRIVATE
+    juce::juce_audio_utils
+    juce::juce_dsp
+    juce::juce_audio_plugin_client
+    PUBLIC
+    juce::juce_recommended_config_flags
+    juce::juce_recommended_lto_flags
+    juce::juce_recommended_warning_flags
+)

@@ -6,6 +6,12 @@ class NeuralAmpAudioProcessor : public juce::AudioProcessor
 public:
     NeuralAmpAudioProcessor();
     ~NeuralAmpAudioProcessor() override;
+    juce::AudioProcessorValueTreeState apvts;
+
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
+        // crea i parametri e li restituisce
+        return {std::make_unique<AudioParameterFloat> (ParameterID { "gain",  1 }, "Gain",  NormalisableRange<float> (-24.0f, 24.0f, 0.01f), 0.0f)};
+    }
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
@@ -32,4 +38,5 @@ public:
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuralAmpAudioProcessor)
+    std::atomic<float>* gainValue;
 };

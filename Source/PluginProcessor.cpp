@@ -4,8 +4,11 @@
 NeuralAmpAudioProcessor::NeuralAmpAudioProcessor()
     : AudioProcessor (BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-        .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)), 
+        apvts(*this, nullptr, "apvts", createParameterLayout()), 
+        gainValue(apvts.getRawParameterValue("gain"))
 {
+    
 }
 
 NeuralAmpAudioProcessor::~NeuralAmpAudioProcessor() {}
@@ -35,6 +38,9 @@ void NeuralAmpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // Per ora: pass-through. Settimana 1 aggiungeremo qui il gain.
+    float dBValue = gainValue->load();
+    float linearValue = juce::Decibels::decibelsToGain(dBValue);
+    buffer.applyGain(linearValue);
 }
 
 juce::AudioProcessorEditor* NeuralAmpAudioProcessor::createEditor()

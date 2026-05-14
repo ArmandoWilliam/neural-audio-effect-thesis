@@ -20,6 +20,14 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     toneLabel.setText("Tone", juce::dontSendNotification);
     addAndMakeVisible(toneLabel);
     toneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "tone", toneSlider);
+
+    qLabel.setJustificationType(juce::Justification::centred);
+    qSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 50);
+    addAndMakeVisible(qSlider);
+    qLabel.setText("Q", juce::dontSendNotification);
+    addAndMakeVisible(qLabel);
+    qAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "qfactor", qSlider);
 }
 
 NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
@@ -38,4 +46,7 @@ void NeuralGuitarAudioProcessorEditor::resized() {
 
     toneSlider.setBounds(100, 50, 100, 100);
     toneLabel.setBounds(100, 30, 100, 20);
+
+    qSlider.setBounds(0, 50, 100, 100);
+    qLabel.setBounds(0, 30, 80, 20);
 }

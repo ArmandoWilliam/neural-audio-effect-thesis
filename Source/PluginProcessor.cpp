@@ -7,7 +7,8 @@ NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)), 
         apvts(*this, nullptr, "apvts", createParameterLayout()), 
         gainValue(apvts.getRawParameterValue("gain")),
-        toneValue(apvts.getRawParameterValue("tone"))
+        toneValue(apvts.getRawParameterValue("tone")),
+        qFactor(apvts.getRawParameterValue("qfactor"))
 {
     
 }
@@ -20,8 +21,8 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
 
     //configure the filter
     float frequencyValue = toneValue->load();
-    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, qFactor));
-    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, qFactor));
+    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
 }
 void NeuralGuitarAudioProcessor::releaseResources() {}
 
@@ -60,9 +61,11 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     }
 
     float frequencyValue = toneValue->load();
+
     DBG("Tone frequency: " + juce::String(frequencyValue));
-    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, qFactor));
-    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, qFactor));
+    
+    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
 
     float *channelDataPointer = buffer.getWritePointer(0);
     // filter on the channel after the gain

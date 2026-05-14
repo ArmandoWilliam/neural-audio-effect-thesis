@@ -7,6 +7,7 @@ public:
     NeuralAmpAudioProcessor();
     ~NeuralAmpAudioProcessor() override;
     juce::AudioProcessorValueTreeState apvts;
+    juce::LinearSmoothedValue<float> gain  { 0.05f };
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout() {
         // crea i parametri e li restituisce

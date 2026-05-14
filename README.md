@@ -1,4 +1,4 @@
-This is my thesis project for Master in Ingegneria del Suono at Tor Vergata in Rome. It's a custom made neural network based guitar distortion effect using the JUCE framework.
+This is my thesis project for Master in Sound Engineering at Tor Vergata in Rome. It's a custom made neural network based guitar distortion effect using the JUCE framework.
 
 # How to Build
 

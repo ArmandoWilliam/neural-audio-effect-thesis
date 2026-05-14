@@ -8,7 +8,8 @@ NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
         apvts(*this, nullptr, "apvts", createParameterLayout()), 
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
-        qFactor(apvts.getRawParameterValue("qfactor"))
+        qFactor(apvts.getRawParameterValue("qfactor")), 
+        drive(apvts.getRawParameterValue("drive"))
 {
     
 }
@@ -21,8 +22,8 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
 
     //configure the filter
     float frequencyValue = toneValue->load();
-    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
-    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
 }
 void NeuralGuitarAudioProcessor::releaseResources() {}
 
@@ -49,29 +50,57 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, buffer.getNumSamples());
 
     float dBValue = gainValue->load();
+    // convert the dBValue in a linear scale to use it in the Knob SmoothedValue
     float linearValue = juce::Decibels::decibelsToGain(dBValue);
+
+    // load the drive value
+    float driveValue = drive->load();
+    
+    //laod the frequency value
+    float frequencyValue = toneValue->load();
+    
     // set a target value where the final gain will stabilize
     gain.setTargetValue(linearValue);
+
+    // set the coefficients of the pre-filters
+    preIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    preIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));  
+    
+    // set the coefficients of the post-filters
+    postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+
+    // *********************************************
+    // Gain -> Pre-Filter -> Drive -> Post-Filter
+    // *********************************************
 
     for (auto i = 0; i < totalNumInputChannels; ++i) {
         float *smoothedValuePointer = buffer.getWritePointer(i);
         for (auto j = 0; j < buffer.getNumSamples(); ++j) {
+            // Gain
             smoothedValuePointer[j] *= gain.getNextValue();
+
+            // Pre-Filter
+            if (i == 0)
+            // left
+                smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+            else
+            // right
+                smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+
+            //Drive
+            smoothedValuePointer[j] *= driveValue;
+            smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
+
+            // Post-Filter
+            if (i == 0)
+                smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+            else
+                smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
         }
     }
 
-    float frequencyValue = toneValue->load();
-
     DBG("Tone frequency: " + juce::String(frequencyValue));
-    
-    IIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    IIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-
-    float *channelDataPointer = buffer.getWritePointer(0);
-    // filter on the channel after the gain
-    IIRFilterLeft.processSamples(channelDataPointer, buffer.getNumSamples());
-    channelDataPointer = buffer.getWritePointer(1);
-    IIRFilterRight.processSamples(channelDataPointer, buffer.getNumSamples());
 }
 
 juce::AudioProcessorEditor* NeuralGuitarAudioProcessor::createEditor()

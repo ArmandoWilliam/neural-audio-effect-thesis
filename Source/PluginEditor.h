@@ -20,8 +20,11 @@ private:
     juce::Label toneLabel;
     juce::Slider qSlider;
     juce::Label qLabel;
+    juce::Slider driveSlider;
+    juce::Label driveLabel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> toneAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
 };

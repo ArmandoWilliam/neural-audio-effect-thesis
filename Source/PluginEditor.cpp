@@ -4,7 +4,7 @@
 NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitarAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    setSize (400, 200);
+    setSize (400, 350);
     gainLabel.setJustificationType(juce::Justification::centred);
     gainSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
     gainSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 80, 20);
@@ -28,6 +28,14 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     qLabel.setText("Q", juce::dontSendNotification);
     addAndMakeVisible(qLabel);
     qAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "qfactor", qSlider);
+
+    driveLabel.setJustificationType(juce::Justification::centred);
+    driveSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    driveSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 50);
+    addAndMakeVisible(driveSlider);
+    driveLabel.setText("Drive", juce::dontSendNotification);
+    addAndMakeVisible(driveLabel);
+    driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "drive", driveSlider);
 }
 
 NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
@@ -41,12 +49,13 @@ void NeuralGuitarAudioProcessorEditor::paint (juce::Graphics& g)
 }
 
 void NeuralGuitarAudioProcessorEditor::resized() {
-    gainSlider.setBounds(200, 50, 100, 100);
-    gainLabel.setBounds(200, 30, 100, 20);
+    toneSlider.setBounds(50, 50, 120, 120);
+    toneLabel.setBounds(50, 30, 120, 20);
+    gainSlider.setBounds(230, 50, 120, 120);
+    gainLabel.setBounds(230, 30, 120, 20);
 
-    toneSlider.setBounds(100, 50, 100, 100);
-    toneLabel.setBounds(100, 30, 100, 20);
-
-    qSlider.setBounds(0, 50, 100, 100);
-    qLabel.setBounds(0, 30, 80, 20);
+    qSlider.setBounds(55, 210, 100, 100);
+    qLabel.setBounds(55, 190, 80, 20);
+    driveSlider.setBounds(265, 210, 100, 100);
+    driveLabel.setBounds(265, 190, 80, 20);
 }

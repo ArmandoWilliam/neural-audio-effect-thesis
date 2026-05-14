@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(NeuralAmp VERSION 0.1.0)
+project(NeuralGuitar VERSION 0.1.0)
 
-# C++20, niente estensioni compilatore-specifiche
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -12,25 +11,24 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_subdirectory(/Users/armando/GIT/JUCE ${CMAKE_BINARY_DIR}/JUCE)
 
 # Definisci il plugin
-juce_add_plugin(NeuralAmp
+juce_add_plugin(NeuralGuitar
     COMPANY_NAME "ArmandoWilliamDev"
-    BUNDLE_ID com.armandowilliamdev.neuralamp
+    BUNDLE_ID com.armandowilliamdev.neuralguitar
     PLUGIN_MANUFACTURER_CODE Armt
     PLUGIN_CODE Namp
     FORMATS AU VST3 Standalone
-    PRODUCT_NAME "NeuralAmp"
+    PRODUCT_NAME "NeuralGuitar"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT FALSE
     NEEDS_MIDI_OUTPUT FALSE
-    # Copia automaticamenteo AU/VST nelle cartelle di sistema dopo ogni build
     COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
 # Genera l'header JuceHeader.h
-juce_generate_juce_header(NeuralAmp)
+juce_generate_juce_header(NeuralGuitar)
 
 # I sorgenti del plugin
-target_sources(NeuralAmp PRIVATE
+target_sources(NeuralGuitar PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
     Source/PluginEditor.cpp
@@ -38,14 +36,14 @@ target_sources(NeuralAmp PRIVATE
 )
 
 # Definizioni di compilazione standard JUCE
-target_compile_definitions(NeuralAmp PUBLIC
+target_compile_definitions(NeuralGuitar PUBLIC
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
 )
 
 # Link dei moduli JUCE necessari
-target_link_libraries(NeuralAmp PRIVATE
+target_link_libraries(NeuralGuitar PRIVATE
     juce::juce_audio_utils
     juce::juce_dsp
     juce::juce_audio_plugin_client

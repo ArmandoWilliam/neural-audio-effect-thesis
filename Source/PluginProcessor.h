@@ -1,11 +1,11 @@
 #pragma once
 #include <JuceHeader.h>
 
-class NeuralAmpAudioProcessor : public juce::AudioProcessor
+class NeuralGuitarAudioProcessor : public juce::AudioProcessor
 {
 public:
-    NeuralAmpAudioProcessor();
-    ~NeuralAmpAudioProcessor() override;
+    NeuralGuitarAudioProcessor();
+    ~NeuralGuitarAudioProcessor() override;
     juce::AudioProcessorValueTreeState apvts;
     juce::LinearSmoothedValue<float> gain  { 0.05f };
 
@@ -22,7 +22,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
-    const juce::String getName() const override { return "NeuralAmp"; }
+    const juce::String getName() const override { return "NeuralGuitar"; }
     bool acceptsMidi() const override  { return false; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
@@ -38,6 +38,6 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NeuralAmpAudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuralGuitarAudioProcessor)
     std::atomic<float>* gainValue;
 };

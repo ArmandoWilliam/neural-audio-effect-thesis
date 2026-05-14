@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-NeuralAmpAudioProcessorEditor::NeuralAmpAudioProcessorEditor (NeuralAmpAudioProcessor& p)
+NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitarAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
     setSize (400, 200);
@@ -12,19 +12,27 @@ NeuralAmpAudioProcessorEditor::NeuralAmpAudioProcessorEditor (NeuralAmpAudioProc
     gainLabel.setText("Gain", juce::dontSendNotification);
     addAndMakeVisible(gainLabel);
     sliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "gain", gainSlider);
+
+    toneLabel.setJustificationType(juce::Justification::centred);
+    toneSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
+    toneSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 50);
+    addAndMakeVisible(toneSlider);
+    toneLabel.setText("Tone", juce::dontSendNotification);
+    addAndMakeVisible(toneLabel);
+    sliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "tone", toneSlider);
 }
 
-NeuralAmpAudioProcessorEditor::~NeuralAmpAudioProcessorEditor() {}
+NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
 
-void NeuralAmpAudioProcessorEditor::paint (juce::Graphics& g)
+void NeuralGuitarAudioProcessorEditor::paint (juce::Graphics& g)
 {
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
     g.setColour (juce::Colours::white);
     g.setFont (juce::FontOptions (20.0f));
-    g.drawFittedText ("NeuralAmp v0.1", getLocalBounds().removeFromTop(30), juce::Justification::centred, 1);
+    g.drawFittedText ("NeuralGuitar v0.1", getLocalBounds().removeFromTop(30), juce::Justification::centred, 1);
 }
 
-void NeuralAmpAudioProcessorEditor::resized() {
+void NeuralGuitarAudioProcessorEditor::resized() {
     gainSlider.setBounds(150, 50, 100, 100);
     gainLabel.setBounds(150, 30, 100, 20);
 }

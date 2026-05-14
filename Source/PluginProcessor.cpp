@@ -1,7 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-NeuralAmpAudioProcessor::NeuralAmpAudioProcessor()
+NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
     : AudioProcessor (BusesProperties()
         .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
         .withOutput ("Output", juce::AudioChannelSet::stereo(), true)), 
@@ -11,15 +11,15 @@ NeuralAmpAudioProcessor::NeuralAmpAudioProcessor()
     
 }
 
-NeuralAmpAudioProcessor::~NeuralAmpAudioProcessor() {}
+NeuralGuitarAudioProcessor::~NeuralGuitarAudioProcessor() {}
 
 // Called when DAW changes sample rate ora audio is stopped and played again
-void NeuralAmpAudioProcessor::prepareToPlay (double sampleRate, int sampleRatePerBlock) {
+void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRatePerBlock) {
     gain.reset(sampleRate, 0.05);
 }
-void NeuralAmpAudioProcessor::releaseResources() {}
+void NeuralGuitarAudioProcessor::releaseResources() {}
 
-bool NeuralAmpAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool NeuralGuitarAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
      && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
@@ -31,7 +31,7 @@ bool NeuralAmpAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
     return true;
 }
 
-void NeuralAmpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
@@ -54,15 +54,15 @@ void NeuralAmpAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     }
 }
 
-juce::AudioProcessorEditor* NeuralAmpAudioProcessor::createEditor()
+juce::AudioProcessorEditor* NeuralGuitarAudioProcessor::createEditor()
 {
-    return new NeuralAmpAudioProcessorEditor (*this);
+    return new NeuralGuitarAudioProcessorEditor (*this);
 }
 
-void NeuralAmpAudioProcessor::getStateInformation (juce::MemoryBlock&) {}
-void NeuralAmpAudioProcessor::setStateInformation (const void*, int) {}
+void NeuralGuitarAudioProcessor::getStateInformation (juce::MemoryBlock&) {}
+void NeuralGuitarAudioProcessor::setStateInformation (const void*, int) {}
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
-    return new NeuralAmpAudioProcessor();
+    return new NeuralGuitarAudioProcessor();
 }

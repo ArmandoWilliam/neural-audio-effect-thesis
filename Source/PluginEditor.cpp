@@ -15,11 +15,11 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
 
     toneLabel.setJustificationType(juce::Justification::centred);
     toneSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    toneSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 50);
+    toneSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 80, 20);
     addAndMakeVisible(toneSlider);
     toneLabel.setText("Tone", juce::dontSendNotification);
     addAndMakeVisible(toneLabel);
-    sliderAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "tone", toneSlider);
+    toneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "tone", toneSlider);
 }
 
 NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
@@ -33,6 +33,9 @@ void NeuralGuitarAudioProcessorEditor::paint (juce::Graphics& g)
 }
 
 void NeuralGuitarAudioProcessorEditor::resized() {
-    gainSlider.setBounds(150, 50, 100, 100);
-    gainLabel.setBounds(150, 30, 100, 20);
+    gainSlider.setBounds(200, 50, 100, 100);
+    gainLabel.setBounds(200, 30, 100, 20);
+
+    toneSlider.setBounds(100, 50, 100, 100);
+    toneLabel.setBounds(100, 30, 100, 20);
 }

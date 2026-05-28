@@ -4,6 +4,19 @@
 NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitarAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+    neuralButton.onClick = [this]() {
+    bool isNeural = neuralButton.getToggleState();
+        qSlider.setVisible(!isNeural);
+        qLabel.setVisible(!isNeural);
+        toneSlider.setVisible(!isNeural);
+        toneLabel.setVisible(!isNeural);
+        driveSlider.setVisible(!isNeural);
+        driveLabel.setVisible(!isNeural);
+    };
+    addAndMakeVisible(neuralButton);
+    neuralAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
+    audioProcessor.apvts, "neural", neuralButton);
+    
     setSize (400, 350);
     gainLabel.setJustificationType(juce::Justification::centred);
     gainSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
@@ -36,6 +49,14 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     driveLabel.setText("Drive", juce::dontSendNotification);
     addAndMakeVisible(driveLabel);
     driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "drive", driveSlider);
+
+    bool isNeural = neuralButton.getToggleState();
+    qSlider.setVisible(!isNeural);
+    qLabel.setVisible(!isNeural);
+    toneSlider.setVisible(!isNeural);
+    toneLabel.setVisible(!isNeural);
+    driveSlider.setVisible(!isNeural);
+    driveLabel.setVisible(!isNeural);
 }
 
 NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
@@ -58,4 +79,6 @@ void NeuralGuitarAudioProcessorEditor::resized() {
     qLabel.setBounds(55, 190, 80, 20);
     driveSlider.setBounds(265, 210, 100, 100);
     driveLabel.setBounds(265, 190, 80, 20);
+
+    neuralButton.setBounds(10, 35, 80, 25);
 }

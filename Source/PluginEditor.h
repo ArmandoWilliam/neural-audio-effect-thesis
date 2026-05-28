@@ -22,9 +22,11 @@ private:
     juce::Label qLabel;
     juce::Slider driveSlider;
     juce::Label driveLabel;
+    juce::ToggleButton neuralButton;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> toneAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> qAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> neuralAttachment;
 };

@@ -1,4 +1,7 @@
 build/
+build-release/
 .vscode/
 .DS_Store
 notes.md
+RTNeural/
+JUCE/

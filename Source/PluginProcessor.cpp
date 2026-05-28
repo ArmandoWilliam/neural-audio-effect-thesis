@@ -9,7 +9,8 @@ NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
         qFactor(apvts.getRawParameterValue("qfactor")), 
-        drive(apvts.getRawParameterValue("drive"))
+        drive(apvts.getRawParameterValue("drive")),
+        neural(apvts.getRawParameterValue("neural"))
 {
     
 }
@@ -18,6 +19,29 @@ NeuralGuitarAudioProcessor::~NeuralGuitarAudioProcessor() {}
 
 // Called when DAW changes sample rate or audio is stopped and played again
 void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRatePerBlock) {
+
+    File userAppDataDirectory = File::getSpecialLocation(File::userDocumentsDirectory).getChildFile(JucePlugin_Manufacturer).getChildFile(JucePlugin_Name);
+    File path = userAppDataDirectory.getFullPathName();
+
+    try {
+        if (userAppDataDirectory.isDirectory()) {
+                juce::Array<juce::File> results;
+                userAppDataDirectory.findChildFiles(results, juce::File::findFiles, false, "*.json");
+                if (results.size() > 0) {
+                    json_file = results[0];
+                    juce::String jsonPath = json_file.getFullPathName();
+                    LSTM_left.load_json(jsonPath.toRawUTF8());
+                    LSTM_right.load_json(jsonPath.toRawUTF8());
+                    LSTM_left.reset();
+                    LSTM_right.reset();
+                }
+            }
+
+    }
+    catch (const std::exception& e) {
+        std::cout << e.what();
+    }
+
     gain.reset(sampleRate, 0.05);
 
     //configure the filter
@@ -70,37 +94,59 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
     postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
 
-    // *********************************************
-    // Gain -> Pre-Filter -> Drive -> Post-Filter
-    // *********************************************
+    if (neural->load() < 0.5f) {
+        // *********************************************
+        // Gain -> Pre-Filter -> Drive -> Post-Filter
+        // *********************************************
 
-    for (auto i = 0; i < totalNumInputChannels; ++i) {
-        float *smoothedValuePointer = buffer.getWritePointer(i);
-        for (auto j = 0; j < buffer.getNumSamples(); ++j) {
-            // Gain
-            smoothedValuePointer[j] *= gain.getNextValue();
+        for (auto i = 0; i < totalNumInputChannels; ++i) {
+            float *smoothedValuePointer = buffer.getWritePointer(i);
+            for (auto j = 0; j < buffer.getNumSamples(); ++j) {
+                // Gain
+                smoothedValuePointer[j] *= gain.getNextValue();
 
-            // Pre-Filter
-            if (i == 0)
-            // left
-                smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-            else
-            // right
-                smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+                // Pre-Filter
+                if (i == 0)
+                // left
+                    smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+                else
+                // right
+                    smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
 
-            //Drive
-            smoothedValuePointer[j] *= driveValue;
-            smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
+                //Drive
+                smoothedValuePointer[j] *= driveValue;
+                smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
 
-            // Post-Filter
-            if (i == 0)
-                smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-            else
-                smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+                // Post-Filter
+                if (i == 0)
+                    smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+                else
+                    smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+            }
         }
+
+    } else {
+
+        // *********************************************
+        // Gain → LSTM
+        // *********************************************
+
+        // buffer temporaneo per l'output
+        juce::AudioBuffer<float> tempBuffer(buffer.getNumChannels(), buffer.getNumSamples());
+
+
+        buffer.applyGain(gain.getCurrentValue());
+
+
+        LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
+        LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
+
+
+        buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
+        buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
     }
 
-    DBG("Tone frequency: " + juce::String(frequencyValue));
+    
 }
 
 juce::AudioProcessorEditor* NeuralGuitarAudioProcessor::createEditor()

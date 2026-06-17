@@ -5,3 +5,7 @@ build-release/
 notes.md
 RTNeural/
 JUCE/
+.venv
+data/
+notebooks/
+requirements.txt

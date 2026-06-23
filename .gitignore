@@ -7,5 +7,6 @@ RTNeural/
 JUCE/
 .venv
 data/
+notebooks_old/
 notebooks/
 requirements.txt

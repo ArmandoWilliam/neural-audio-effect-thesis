@@ -135,8 +135,11 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         juce::AudioBuffer<float> tempBuffer(buffer.getNumChannels(), buffer.getNumSamples());
 
 
-        buffer.applyGain(gain.getCurrentValue());
-
+        for (auto i = 0; i < totalNumInputChannels; ++i) {
+            float* channelData = buffer.getWritePointer(i);
+            for (int j = 0; j < buffer.getNumSamples(); ++j)
+                channelData[j] *= gain.getNextValue();
+        }
 
         LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
         LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());

@@ -13,6 +13,7 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
         driveSlider.setVisible(!isNeural);
         driveLabel.setVisible(!isNeural);
     };
+    neuralButton.setButtonText("Neural Mode");
     addAndMakeVisible(neuralButton);
     neuralAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
     audioProcessor.apvts, "neural", neuralButton);
@@ -80,5 +81,5 @@ void NeuralGuitarAudioProcessorEditor::resized() {
     driveSlider.setBounds(265, 210, 100, 100);
     driveLabel.setBounds(265, 190, 80, 20);
 
-    neuralButton.setBounds(10, 35, 80, 25);
+    neuralButton.setBounds(10, 35, 120, 25);
 }

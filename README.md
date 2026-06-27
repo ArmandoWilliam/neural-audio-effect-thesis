@@ -1,9 +1,11 @@
-This is my thesis project for Master in Sound Engineering at Tor Vergata in Rome. It's a custom made neural network based guitar distortion effect using the JUCE framework.
+This is my thesis project for the Master in Sound Engineering at Tor Vergata, in Rome. It's a custom made neural network based guitar distortion effect, using the JUCE framework, based on the BOSS SD-1 pedal, and RTNeural as inferencing engine.
 
 # Project Setup
 
 ## Prerequisites
 - macOS with Xcode Command Line Tools (`xcode-select --install`)
+- Windows computer
+- Homebrew installed for MacOS
 - CMake 3.22+ (`brew install cmake`)
 - Git
 - VS Code with C/C++ and CMake Tools extensions (Microsoft)
@@ -14,7 +16,6 @@ mkdir -p ~/GIT
 cd ~/GIT
 git clone https://github.com/juce-framework/JUCE.git
 ```
-Important: the JUCE path must have no spaces, no accents, and must not be in an iCloud-synced folder.
 
 ## Clone the project
 ```bash
@@ -26,9 +27,9 @@ cd neural-audio-effect-thesis
 ## CMake configuration
 The `CMakeLists.txt` references JUCE via absolute path:
 ```cmake
-add_subdirectory(/Users/armando/GIT/JUCE ${CMAKE_BINARY_DIR}/JUCE)
+add_subdirectory(.../GIT/JUCE ${CMAKE_BINARY_DIR}/JUCE)
 ```
-If your JUCE is in a different location, update this line accordingly.
+Update this line accordigly with your JUCE location path.
 
 ## First build
 ```bash
@@ -36,9 +37,10 @@ cd ~/GIT/neural-audio-effect-thesis
 cmake -B build -G "Unix Makefiles"
 cmake --build build -j 4
 ```
-The first build takes 10-15 minutes (compiles all JUCE modules). Subsequent builds are incremental and take seconds.
+The first build takes longer to compiles all JUCE modules. Subsequent builds are incremental and take less time.
 
 ## Verify the plugin was built
+Update this line according to your OS.
 ```bash
 ls build/NeuralGuitar_artefacts/Standalone/
 ls ~/Library/Audio/Plug-Ins/Components/ | grep NeuralGuitar
@@ -71,25 +73,27 @@ Rebuild with `cmake -B build -G "Unix Makefiles"` then reload VS Code.
 
 # How to Build
 
+In the following lines, replace N with the number of desired cores to use for the build.
+
 ## After modifying CMakeLists.txt
 ```bash
 cd ~/GIT/neural-audio-effect-thesis
 cmake -B build -G "Unix Makefiles"
-cmake --build build -j 6
+cmake --build build -j N
 ```
 
 ## After modifying .cpp or .h files only
 ```bash
 cd ~/GIT/neural-audio-effect-thesis
-cmake --build build -j 6
+cmake --build build -j N
 ```
 
-## Clean build (from scratch, using 6 parallel cores)
+## Clean build (from scratch, using N parallel cores)
 ```bash
 cd ~/GIT/neural-audio-effect-thesis
 rm -rf build
 cmake -B build -G "Unix Makefiles"
-cmake --build build -j 6
+cmake --build build -j N
 ```
 
 ## Running the Standalone for testing
@@ -100,23 +104,23 @@ Launch from terminal to see DBG() output in the console.
 
 ## Filtering build errors only
 ```bash
-cmake --build build -j 6 2>&1 | grep "error:"
+cmake --build build -j N 2>&1 | grep "error:"
 ```
 
 ## Debug build (development and testing, DBG() enabled)
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles"
-cmake --build build -j 4
+cmake --build build -j N
 ```
 
 ## Release build (performance testing and final delivery)
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles"
-cmake --build build -j 4
+cmake --build build -j N
 ```
 
 ## Release build (performance testing and final delivery)
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles"
-cmake --build build -j 6
+cmake --build build -j N
 ```

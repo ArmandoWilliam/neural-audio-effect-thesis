@@ -9,7 +9,8 @@ NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
         qFactor(apvts.getRawParameterValue("qfactor")), 
-        drive(apvts.getRawParameterValue("drive"))
+        drive(apvts.getRawParameterValue("drive")),
+        neuralOn(apvts.getRawParameterValue("neuralOn"))
 {
     
 }
@@ -68,7 +69,9 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();    
+    auto totalNumOutputChannels = getTotalNumOutputChannels();  
+    
+    bool isNeural = neuralOn->load() > 0.5f;
 
     // mute input channels not linked to output
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
@@ -102,16 +105,21 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // LSTM -> Gain -> Pre-Filter -> Drive -> Post-Filter
     // *********************************************
 
-    // temporary buffer to store the processed audio, I need to create a copy todo the forward propagation
-    juce::AudioBuffer<float> tempBuffer(1, buffer.getNumSamples());
+    
 
-    LSTM.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
-    // LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
-    // LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
+    if (isNeural) {
 
-    buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
-    // buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
-    // buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
+        // temporary buffer to store the processed audio, I need to create a copy todo the forward propagation
+        juce::AudioBuffer<float> tempBuffer(1, buffer.getNumSamples());
+
+        LSTM.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
+        // LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
+        // LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
+
+        buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
+        // buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
+        // buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
+    }
 
     // for (auto i = 0; i < totalNumInputChannels; ++i) {
     float *smoothedValuePointer = buffer.getWritePointer(0);
@@ -128,9 +136,13 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         // right channel
             // smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
 
-        //Drive
-        smoothedValuePointer[j] *= driveValue;
-        smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
+        if (!isNeural)
+        {
+            //Drive
+            smoothedValuePointer[j] *= driveValue;
+            smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
+        }
+        
 
         // Post-Filter
         smoothedValuePointer[j] = postIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);

@@ -4,19 +4,12 @@
 NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitarAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    neuralButton.onClick = [this]() {
-    bool isNeural = neuralButton.getToggleState();
-        qSlider.setVisible(!isNeural);
-        qLabel.setVisible(!isNeural);
-        toneSlider.setVisible(!isNeural);
-        toneLabel.setVisible(!isNeural);
-        driveSlider.setVisible(!isNeural);
-        driveLabel.setVisible(!isNeural);
-    };
-    neuralButton.setButtonText("Neural Mode");
-    addAndMakeVisible(neuralButton);
-    neuralAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(
-    audioProcessor.apvts, "neural", neuralButton);
+    qSlider.setVisible(true);
+    qLabel.setVisible(true);
+    toneSlider.setVisible(true);
+    toneLabel.setVisible(true);
+    driveSlider.setVisible(true);
+    driveLabel.setVisible(true);
     
     setSize (400, 350);
     gainLabel.setJustificationType(juce::Justification::centred);
@@ -50,14 +43,7 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     driveLabel.setText("Drive", juce::dontSendNotification);
     addAndMakeVisible(driveLabel);
     driveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "drive", driveSlider);
-
-    bool isNeural = neuralButton.getToggleState();
-    qSlider.setVisible(!isNeural);
-    qLabel.setVisible(!isNeural);
-    toneSlider.setVisible(!isNeural);
-    toneLabel.setVisible(!isNeural);
-    driveSlider.setVisible(!isNeural);
-    driveLabel.setVisible(!isNeural);
+    
 }
 
 NeuralGuitarAudioProcessorEditor::~NeuralGuitarAudioProcessorEditor() {}
@@ -67,7 +53,7 @@ void NeuralGuitarAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
     g.setColour (juce::Colours::white);
     g.setFont (juce::FontOptions (20.0f));
-    g.drawFittedText ("NeuralGuitar v0.1", getLocalBounds().removeFromTop(30), juce::Justification::centred, 1);
+    g.drawFittedText ("NeuralGuitar v1.0", getLocalBounds().removeFromTop(30), juce::Justification::centred, 1);
 }
 
 void NeuralGuitarAudioProcessorEditor::resized() {
@@ -81,5 +67,4 @@ void NeuralGuitarAudioProcessorEditor::resized() {
     driveSlider.setBounds(265, 210, 100, 100);
     driveLabel.setBounds(265, 190, 80, 20);
 
-    neuralButton.setBounds(10, 35, 120, 25);
 }

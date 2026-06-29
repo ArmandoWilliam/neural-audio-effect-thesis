@@ -3,14 +3,13 @@
 
 NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
     : AudioProcessor (BusesProperties()
-        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)), 
+        .withInput  ("Input",  juce::AudioChannelSet::mono(), true)
+        .withOutput ("Output", juce::AudioChannelSet::mono(), true)), 
         apvts(*this, nullptr, "apvts", createParameterLayout()), 
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
         qFactor(apvts.getRawParameterValue("qfactor")), 
-        drive(apvts.getRawParameterValue("drive")),
-        neural(apvts.getRawParameterValue("neural"))
+        drive(apvts.getRawParameterValue("drive"))
 {
     
 }
@@ -30,10 +29,12 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
                 if (results.size() > 0) {
                     json_file = results[0];
                     juce::String jsonPath = json_file.getFullPathName();
-                    LSTM_left.load_json(jsonPath.toRawUTF8());
-                    LSTM_right.load_json(jsonPath.toRawUTF8());
-                    LSTM_left.reset();
-                    LSTM_right.reset();
+                    LSTM.load_json(jsonPath.toRawUTF8());
+                    LSTM.reset();
+                    // LSTM_left.load_json(jsonPath.toRawUTF8());
+                    // LSTM_right.load_json(jsonPath.toRawUTF8());
+                    // LSTM_left.reset();
+                    // LSTM_right.reset();
                 }
             }
 
@@ -46,15 +47,15 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
 
     //configure the filter
     float frequencyValue = toneValue->load();
-    postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
-    postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    // postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    // postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
 }
 void NeuralGuitarAudioProcessor::releaseResources() {}
 
 bool NeuralGuitarAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
-     && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
+    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono())
         return false;
 
     if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
@@ -87,67 +88,59 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     gain.setTargetValue(linearValue);
 
     // set the coefficients of the pre-filters
-    preIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    preIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));  
+    preIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    // preIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    // preIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));  
     
     // set the coefficients of the post-filters
-    postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-
-    if (neural->load() < 0.5f) {
-        // *********************************************
-        // Gain -> Pre-Filter -> Drive -> Post-Filter
-        // *********************************************
-
-        for (auto i = 0; i < totalNumInputChannels; ++i) {
-            float *smoothedValuePointer = buffer.getWritePointer(i);
-            for (auto j = 0; j < buffer.getNumSamples(); ++j) {
-                // Gain
-                smoothedValuePointer[j] *= gain.getNextValue();
-
-                // Pre-Filter
-                if (i == 0)
-                // left
-                    smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-                else
-                // right
-                    smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
-
-                //Drive
-                smoothedValuePointer[j] *= driveValue;
-                smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
-
-                // Post-Filter
-                if (i == 0)
-                    smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-                else
-                    smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
-            }
-        }
-
-    } else {
-
-        // *********************************************
-        // Gain → LSTM
-        // *********************************************
-
-        // buffer temporaneo per l'output
-        juce::AudioBuffer<float> tempBuffer(buffer.getNumChannels(), buffer.getNumSamples());
+    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    // postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    // postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
 
 
-        for (auto i = 0; i < totalNumInputChannels; ++i) {
-            float* channelData = buffer.getWritePointer(i);
-            for (int j = 0; j < buffer.getNumSamples(); ++j)
-                channelData[j] *= gain.getNextValue();
-        }
+    // *********************************************
+    // LSTM -> Gain -> Pre-Filter -> Drive -> Post-Filter
+    // *********************************************
 
-        LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
-        LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
+    // temporary buffer to store the processed audio, I need to create a copy todo the forward propagation
+    juce::AudioBuffer<float> tempBuffer(1, buffer.getNumSamples());
 
+    LSTM.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
+    // LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
+    // LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
 
-        buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
-        buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
+    buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
+    // buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
+    // buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
+
+    // for (auto i = 0; i < totalNumInputChannels; ++i) {
+    float *smoothedValuePointer = buffer.getWritePointer(0);
+    for (auto j = 0; j < buffer.getNumSamples(); ++j) {
+        // Gain
+        smoothedValuePointer[j] *= gain.getNextValue();
+
+        // Pre-Filter
+        smoothedValuePointer[j] = preIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
+        // if (i == 0)
+        // left channel
+            // smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+        // else
+        // right channel
+            // smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+
+        //Drive
+        smoothedValuePointer[j] *= driveValue;
+        smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
+
+        // Post-Filter
+        smoothedValuePointer[j] = postIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
+        // if (i == 0)
+            // smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
+        // else
+            // smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
     }
+    // }
+    
 
     
 }

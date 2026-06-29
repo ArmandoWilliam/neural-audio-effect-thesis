@@ -119,6 +119,8 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
         // buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
         // buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
+
+        buffer.applyGain(juce::Decibels::decibelsToGain(15.0f));
     }
 
     // for (auto i = 0; i < totalNumInputChannels; ++i) {

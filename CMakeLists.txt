@@ -27,6 +27,11 @@ juce_add_plugin(NeuralGuitar
     COPY_PLUGIN_AFTER_BUILD TRUE
 )
 
+juce_add_binary_data(NeuralGuitarData
+    SOURCES
+        Assets/pedal.png
+)
+
 # Gen the header JuceHeader.h
 juce_generate_juce_header(NeuralGuitar)
 
@@ -57,6 +62,7 @@ target_link_libraries(NeuralGuitar PRIVATE
     juce::juce_recommended_lto_flags
     juce::juce_recommended_warning_flags
     RTNeural
+    NeuralGuitarData
 )
 
 target_include_directories(NeuralGuitar PRIVATE

@@ -5,8 +5,6 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
     pedalImage = juce::ImageCache::getFromMemory(BinaryData::pedal_png, BinaryData::pedal_pngSize);
-    qSlider.setVisible(true);
-    qLabel.setVisible(true);
     toneSlider.setVisible(true);
     toneLabel.setVisible(true);
     driveSlider.setVisible(true);
@@ -28,14 +26,6 @@ NeuralGuitarAudioProcessorEditor::NeuralGuitarAudioProcessorEditor (NeuralGuitar
     toneLabel.setText("Tone", juce::dontSendNotification);
     addAndMakeVisible(toneLabel);
     toneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "tone", toneSlider);
-
-    qLabel.setJustificationType(juce::Justification::centred);
-    qSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 50);
-    addAndMakeVisible(qSlider);
-    qLabel.setText("Q", juce::dontSendNotification);
-    addAndMakeVisible(qLabel);
-    qAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.apvts, "qfactor", qSlider);
 
     driveLabel.setJustificationType(juce::Justification::centred);
     driveSlider.setSliderStyle(juce::Slider::RotaryVerticalDrag);
@@ -121,8 +111,6 @@ void NeuralGuitarAudioProcessorEditor::resized() {
     neuralOnLabel.setBounds(440, 35, 50, 30);
     neuralOffLabel.setBounds(605, 35, 50, 30);
 
-    qSlider.setBounds(40, 320, 120, 120);
-    qLabel.setBounds(40, 295, 120, 20);
     driveSlider.setBounds(500, 320, 120, 120);
     driveLabel.setBounds(500, 295, 120, 20);
 }

@@ -14,8 +14,7 @@ public:
         // crea i parametri e li restituisce
         return {
             std::make_unique<AudioParameterFloat> (ParameterID { "gain",  1 }, "Gain",  NormalisableRange<float> (-24.0f, 24.0f, 0.01f), 0.0f),
-            std::make_unique<AudioParameterFloat> (ParameterID { "tone",  2 }, "Tone",  NormalisableRange<float> (0.0f, 20000.0f, 0.01f), 4000.0f),
-            std::make_unique<AudioParameterFloat> (ParameterID { "qfactor",  3 }, "qFactor",  NormalisableRange<float> (0.1f, 10.0f, 0.01f), 0.707f),
+            std::make_unique<AudioParameterFloat> (ParameterID { "tone",  2 }, "Tone",  NormalisableRange<float> (500.0f, 7000.0f, 0.01f), 4000.0f),
             std::make_unique<AudioParameterFloat> (ParameterID { "drive",  4 }, "drive",  NormalisableRange<float> (1.0f, 50.0f, 1.0f), 1.0f),
             std::make_unique<AudioParameterBool> (ParameterID { "neuralOn",  5 }, "Neural", false),
         };
@@ -54,7 +53,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NeuralGuitarAudioProcessor)
     std::atomic<float>* gainValue;
     std::atomic<float>* toneValue;
-    std::atomic<float>* qFactor;
     std::atomic<float>* drive;
     //Infinite Inpulse Response filter to simulte a low pass
     juce::IIRFilter preIIRFilter;

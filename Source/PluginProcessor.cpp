@@ -8,7 +8,6 @@ NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
         apvts(*this, nullptr, "apvts", createParameterLayout()), 
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
-        qFactor(apvts.getRawParameterValue("qfactor")), 
         drive(apvts.getRawParameterValue("drive")),
         neuralOn(apvts.getRawParameterValue("neuralOn"))
 {
@@ -32,10 +31,6 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
                     juce::String jsonPath = json_file.getFullPathName();
                     LSTM.load_json(jsonPath.toRawUTF8());
                     LSTM.reset();
-                    // LSTM_left.load_json(jsonPath.toRawUTF8());
-                    // LSTM_right.load_json(jsonPath.toRawUTF8());
-                    // LSTM_left.reset();
-                    // LSTM_right.reset();
                 }
             }
 
@@ -48,9 +43,8 @@ void NeuralGuitarAudioProcessor::prepareToPlay (double sampleRate, int sampleRat
 
     //configure the filter
     float frequencyValue = toneValue->load();
-    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
-    // postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
-    // postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, *qFactor));
+    float qFromTone = 0.01f + (frequencyValue - 500.0f) * (1.49f / 6500.0f);
+    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, frequencyValue, qFromTone));
 }
 void NeuralGuitarAudioProcessor::releaseResources() {}
 
@@ -69,7 +63,9 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 {
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();  
+    auto totalNumOutputChannels = getTotalNumOutputChannels(); 
+    constexpr float softG = 1.5f;
+    const float softNorm = 1.0f / std::asinh(softG);
     
     bool isNeural = neuralOn->load() > 0.5f;
 
@@ -86,19 +82,17 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     
     //laod the frequency value
     float frequencyValue = toneValue->load();
+
+    float qFromTone = 0.01f + (frequencyValue - 500.0f) * (1.49f / 6500.0f);
     
     // set a target value where the final gain will stabilize
     gain.setTargetValue(linearValue);
 
     // set the coefficients of the pre-filters
-    preIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    // preIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    // preIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));  
+    preIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, qFromTone));  
     
     // set the coefficients of the post-filters
-    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    // postIIRFilterLeft.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
-    // postIIRFilterRight.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, *qFactor));
+    postIIRFilter.setCoefficients(juce::IIRCoefficients::makeLowPass(this->getSampleRate(), frequencyValue, qFromTone));
 
 
     // *********************************************
@@ -113,30 +107,19 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         juce::AudioBuffer<float> tempBuffer(1, buffer.getNumSamples());
 
         LSTM.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
-        // LSTM_left.process(buffer.getReadPointer(0), tempBuffer.getWritePointer(0), buffer.getNumSamples());
-        // LSTM_right.process(buffer.getReadPointer(1), tempBuffer.getWritePointer(1), buffer.getNumSamples());
 
         buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
-        // buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
-        // buffer.copyFrom(1, 0, tempBuffer, 1, 0, buffer.getNumSamples());
 
         buffer.applyGain(juce::Decibels::decibelsToGain(15.0f));
     }
 
-    // for (auto i = 0; i < totalNumInputChannels; ++i) {
     float *smoothedValuePointer = buffer.getWritePointer(0);
     for (auto j = 0; j < buffer.getNumSamples(); ++j) {
-        // Gain
-        smoothedValuePointer[j] *= gain.getNextValue();
 
-        // Pre-Filter
-        smoothedValuePointer[j] = preIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
-        // if (i == 0)
-        // left channel
-            // smoothedValuePointer[j] = preIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-        // else
-        // right channel
-            // smoothedValuePointer[j] = preIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+        if (!isNeural) {
+            // Transistor Saturation, inside the SD-1 schematic, always applies
+            smoothedValuePointer[j] = std::asinh(softG * smoothedValuePointer[j]) * softNorm;
+        }
 
         if (!isNeural)
         {
@@ -144,16 +127,18 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             smoothedValuePointer[j] *= driveValue;
             smoothedValuePointer[j] = std::tanh(smoothedValuePointer[j]);
         }
-        
+
+        // Pre-Filter
+        smoothedValuePointer[j] = preIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
+
+        // Gain
+        smoothedValuePointer[j] *= gain.getNextValue();
 
         // Post-Filter
-        smoothedValuePointer[j] = postIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
-        // if (i == 0)
-            // smoothedValuePointer[j] = postIIRFilterLeft.processSingleSampleRaw(smoothedValuePointer[j]);
-        // else
-            // smoothedValuePointer[j] = postIIRFilterRight.processSingleSampleRaw(smoothedValuePointer[j]);
+        // smoothedValuePointer[j] = postIIRFilter.processSingleSampleRaw(smoothedValuePointer[j]);
+
     }
-    // }
+
     
 
     

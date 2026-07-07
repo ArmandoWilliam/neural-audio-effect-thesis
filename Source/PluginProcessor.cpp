@@ -3,8 +3,8 @@
 
 NeuralGuitarAudioProcessor::NeuralGuitarAudioProcessor()
     : AudioProcessor (BusesProperties()
-        .withInput  ("Input",  juce::AudioChannelSet::mono(), true)
-        .withOutput ("Output", juce::AudioChannelSet::mono(), true)), 
+        .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)), 
         apvts(*this, nullptr, "apvts", createParameterLayout()), 
         gainValue(apvts.getRawParameterValue("gain")),
         toneValue(apvts.getRawParameterValue("tone")),
@@ -50,10 +50,15 @@ void NeuralGuitarAudioProcessor::releaseResources() {}
 
 bool NeuralGuitarAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono())
+    auto in  = layouts.getMainInputChannelSet();
+    auto out = layouts.getMainOutputChannelSet();
+
+    if (in != juce::AudioChannelSet::mono() && in != juce::AudioChannelSet::stereo())
+        return false;
+    if (out != juce::AudioChannelSet::mono() && out != juce::AudioChannelSet::stereo())
         return false;
 
-    if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
+    if (in.size() > out.size())
         return false;
 
     return true;
@@ -70,8 +75,8 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     bool isNeural = neuralOn->load() > 0.5f;
 
     // mute input channels not linked to output
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+    // for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    //    buffer.clear (i, 0, buffer.getNumSamples());
 
     float dBValue = gainValue->load();
     // convert the dBValue in a linear scale to use it in the Knob SmoothedValue
@@ -110,7 +115,6 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
         buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
 
-        buffer.applyGain(juce::Decibels::decibelsToGain(15.0f));
     }
 
     float *smoothedValuePointer = buffer.getWritePointer(0);
@@ -139,7 +143,8 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     }
 
-    
+    for (int ch = 1; ch < totalNumOutputChannels; ++ch)
+        buffer.copyFrom(ch, 0, buffer, 0, 0, buffer.getNumSamples());
 
     
 }

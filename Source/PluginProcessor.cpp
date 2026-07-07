@@ -115,6 +115,8 @@ void NeuralGuitarAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
         buffer.copyFrom(0, 0, tempBuffer, 0, 0, buffer.getNumSamples());
 
+        buffer.applyGain(juce::Decibels::decibelsToGain(15.0f));
+
     }
 
     float *smoothedValuePointer = buffer.getWritePointer(0);
